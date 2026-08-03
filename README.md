@@ -6,6 +6,10 @@
 
 <br /><br />
 
+------
+
+
+
 ## 1. Descrição
 
 O **BOMbocado** é uma plataforma de delivery de alimentos criada para conectar empresas que possuem produtos próximos da validade ou fora de época a consumidores que buscam alimentos de qualidade por preços mais acessíveis.
@@ -15,6 +19,8 @@ Por meio da plataforma, as empresas podem disponibilizar produtos e montar ofert
 O projeto busca contribuir para a redução do desperdício de alimentos, gerar economia para os consumidores e criar novas oportunidades de receita para empresas parceiras.
 
 > **Conectando quem tem excesso a quem precisa de acesso.**
+
+------
 
 
 
@@ -39,17 +45,27 @@ A aplicação foi construída seguindo a arquitetura REST, utilizando Java, Spri
 9. Estrutura preparada para integração com uma aplicação frontend.
 10. Base para futuras funcionalidades, como avaliações, cupons, rastreamento de pedidos, notificações e doações.
 
+------
+
+
+
 ## 3. Diagrama de Classes
 
 O Diagrama de Classes representa a estrutura das principais entidades do backend e seus relacionamentos.
 
 <div align="center">     <img src="https://i.imgur.com/SEU_LINK_DO_DIAGRAMA_DE_CLASSES.png" title="Diagrama de Classes do BOMbocado" alt="Diagrama de Classes" width="85%" /> </div>
 
+------
+
+
+
 ## 4. Diagrama Entidade-Relacionamento (DER)
 
 O Diagrama Entidade-Relacionamento apresenta a organização das tabelas do banco de dados e os relacionamentos entre usuários, categorias e produtos.
 
 <div align="center">     <img src="https://i.imgur.com/SEU_LINK_DO_DER.png" title="Diagrama Entidade-Relacionamento do BOMbocado" alt="Diagrama Entidade-Relacionamento" width="85%" /> </div>
+
+------
 
 
 
@@ -62,6 +78,8 @@ O Diagrama Entidade-Relacionamento apresenta a organização das tabelas do banc
 | **Framework**                | Spring Boot                                       |
 | **ORM**                      | Spring Data JPA / Hibernate                       |
 | **Banco de dados**           | MySQL 8.0                                         |
+
+------
 
 
 
@@ -86,6 +104,8 @@ src
 - **Repository:** realiza a comunicação com o banco de dados.
 - **Service:** concentra regras de negócio, quando aplicável.
 - **application.properties:** armazena as configurações da aplicação e do banco de dados.
+
+------
 
 
 
@@ -154,3 +174,24 @@ A API ficará disponível, por padrão, em:
 ```
 http://localhost:8080
 ```
+
+------
+
+
+
+## 8. Equipe
+
+O **BOMbocado** foi desenvolvido pela equipe **Ignis Code Solutions**, formada por estudantes do Bootcamp Java Full Stack da Generation Brasil, com foco na aplicação de boas práticas de desenvolvimento de software, metodologias ágeis e construção de APIs REST utilizando Java e Spring Boot.
+
+### Desenvolvedores
+
+- *André Nunes*
+- *Daniel Araújo*
+- *Elaine Alves*
+- *Jonathan Leão*
+- *João Pedro Duo*
+- *Luiza Paolinelli*
+- *Patrick Carneiro*
+
+------
+
