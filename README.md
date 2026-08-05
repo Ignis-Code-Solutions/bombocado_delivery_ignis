@@ -53,7 +53,7 @@ A aplicação foi construída seguindo a arquitetura REST, utilizando Java, Spri
 
 O Diagrama de Classes representa a estrutura das principais entidades do backend e seus relacionamentos.
 
-<div align="center">     <img src="https://i.imgur.com/SEU_LINK_DO_DIAGRAMA_DE_CLASSES.png" title="Diagrama de Classes do BOMbocado" alt="Diagrama de Classes" width="85%" /> </div>
+<div align="center">     <img src="https://ik.imagekit.io/carlosTeste/Diagrama%20de%20Classes%20Bombocado.png" alt="Diagrama de Classes" width="85%" /> </div>
 
 ------
 
@@ -63,7 +63,7 @@ O Diagrama de Classes representa a estrutura das principais entidades do backend
 
 O Diagrama Entidade-Relacionamento apresenta a organização das tabelas do banco de dados e os relacionamentos entre usuários, categorias e produtos.
 
-<div align="center">     <img src="https://i.imgur.com/SEU_LINK_DO_DER.png" title="Diagrama Entidade-Relacionamento do BOMbocado" alt="Diagrama Entidade-Relacionamento" width="85%" /> </div>
+<div align="center">     <img src="https://ik.imagekit.io/carlosTeste/Diagrama%20de%20Entidade%20relacionamento.png" alt="Diagrama Entidade-Relacionamento" width="85%" /> </div>
 
 ------
 
