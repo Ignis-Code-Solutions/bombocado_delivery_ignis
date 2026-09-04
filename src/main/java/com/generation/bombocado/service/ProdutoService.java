@@ -95,6 +95,7 @@ public class ProdutoService {
 
     private void definirNutriscore(Produto produto) {
     	if (produto.getNome() == null || produto.getNome().trim().isEmpty()) {
+    		produto.setNutriscore("N/A");
             return;
         }
 
@@ -136,6 +137,10 @@ public class ProdutoService {
                     produto.setNutriscore(converterScoreParaLetra(score));
                 }
             }
+            
+         // Caso não encontre no Open Food Facts, define um valor padrão em vez de null
+            produto.setNutriscore("N/A");
+            
         } catch (Exception e) {
             // Exibe o erro no console em caso de falha de rede ou parsing
             System.err.println("Erro ao buscar Nutri-Score na Open Food Facts: " + e.getMessage());
