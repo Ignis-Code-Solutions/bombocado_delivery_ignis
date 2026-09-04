@@ -13,6 +13,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.generation.bombocado.model.Produto;
 import com.generation.bombocado.repository.CategoriaRepository;
 import com.generation.bombocado.repository.ProdutoRepository;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 public class ProdutoService {
@@ -89,16 +94,31 @@ public class ProdutoService {
     }
 
     private void definirNutriscore(Produto produto) {
-        if (produto.getNome() == null || produto.getNome().trim().isEmpty()) {
+    	if (produto.getNome() == null || produto.getNome().trim().isEmpty()) {
             return;
         }
 
         try {
             RestTemplate restTemplate = new RestTemplate();
-            String url = "https://br.openfoodfacts.org/cgi/search.pl?search_terms=" 
-                    + produto.getNome() + "&search_simple=1&action=process&json=1";
 
-            JsonNode root = restTemplate.getForObject(url, JsonNode.class);
+            // 1. Adiciona o User-Agent exigido pelo Open Food Facts
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("User-Agent", "BombocadoApp - Web/Java - Version 1.0 - dev@bombocado.com");
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            // 2. Codifica caracteres especiais e espaços do nome do produto na URL
+            String url = UriComponentsBuilder.fromUriString("https://br.openfoodfacts.org/cgi/search.pl")
+                    .queryParam("search_terms", produto.getNome())
+                    .queryParam("search_simple", "1")
+                    .queryParam("action", "process")
+                    .queryParam("json", "1")
+                    .encode()
+                    .toUriString();
+
+            // 3. Executa a requisição enviando os cabeçalhos
+            ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+            JsonNode root = response.getBody();
 
             if (root != null && root.has("products") && root.get("products").isArray() && root.get("products").size() > 0) {
                 JsonNode primeiroProduto = root.get("products").get(0);
@@ -117,6 +137,8 @@ public class ProdutoService {
                 }
             }
         } catch (Exception e) {
+            // Exibe o erro no console em caso de falha de rede ou parsing
+            System.err.println("Erro ao buscar Nutri-Score na Open Food Facts: " + e.getMessage());
         }
     }
 
