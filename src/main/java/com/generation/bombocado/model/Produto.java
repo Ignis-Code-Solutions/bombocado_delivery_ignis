@@ -48,7 +48,7 @@ public class Produto {
 
     private Integer tempoEntrega;
 
-    @Size(max = 2, message = "O Nutri-score deve conter a letra correspondente (A, B, C, D ou E)")
+    @Size(max = 10, message = "O Nutri-score deve conter a letra correspondente (A, B, C, D ou E)")
     @Column(length = 2)
     private String nutriscore;
 
