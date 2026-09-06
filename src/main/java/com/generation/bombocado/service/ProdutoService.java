@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -27,6 +28,13 @@ public class ProdutoService {
 
     @Autowired
     private CategoriaRepository categoriaRepository;
+    
+    // Injeção das credenciais lidas das variáveis de ambiente
+    @Value("${openfoodfacts.username:}")
+    private String offUsername;
+
+    @Value("${openfoodfacts.password:}")
+    private String offPassword;
 
     public List<Produto> findAll() {
         return produtoRepository.findAll()
@@ -95,29 +103,32 @@ public class ProdutoService {
 
     private void definirNutriscore(Produto produto) {
     	if (produto.getNome() == null || produto.getNome().trim().isEmpty()) {
-    		produto.setNutriscore("N/A");
+            produto.setNutriscore("-");
             return;
         }
 
         try {
             RestTemplate restTemplate = new RestTemplate();
 
-            // 1. Adiciona o User-Agent exigido pelo Open Food Facts
+            // 1. Cabeçalhos com User-Agent e Autenticação Básica (credenciais do Render)
             HttpHeaders headers = new HttpHeaders();
             headers.set("User-Agent", "BombocadoApp - Web/Java - Version 1.0 - dev@bombocado.com");
+            
+            if (offUsername != null && !offUsername.isBlank() && offPassword != null && !offPassword.isBlank()) {
+                headers.setBasicAuth(offUsername, offPassword);
+            }
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
-            // 2. Codifica caracteres especiais e espaços do nome do produto na URL
-            String url = UriComponentsBuilder.fromUriString("https://br.openfoodfacts.org/cgi/search.pl")
+            // 2. Endpoint moderno v2 filtrando apenas o essencial
+            String url = UriComponentsBuilder.fromUriString("https://world.openfoodfacts.org/api/v2/search")
                     .queryParam("search_terms", produto.getNome())
-                    .queryParam("search_simple", "1")
-                    .queryParam("action", "process")
-                    .queryParam("json", "1")
+                    .queryParam("fields", "product_name,nutriscore_grade,nutriscore_score")
+                    .queryParam("page_size", "1")
                     .encode()
                     .toUriString();
 
-            // 3. Executa a requisição enviando os cabeçalhos
+            // 3. Execução da chamada
             ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
             JsonNode root = response.getBody();
 
@@ -126,7 +137,7 @@ public class ProdutoService {
 
                 if (primeiroProduto.has("nutriscore_grade")) {
                     String grade = primeiroProduto.get("nutriscore_grade").asText();
-                    if (grade != null && !grade.isBlank()) {
+                    if (grade != null && !grade.isBlank() && !grade.equalsIgnoreCase("unknown")) {
                         produto.setNutriscore(grade.toUpperCase());
                         return;
                     }
@@ -135,15 +146,17 @@ public class ProdutoService {
                 if (primeiroProduto.has("nutriscore_score")) {
                     int score = primeiroProduto.get("nutriscore_score").asInt();
                     produto.setNutriscore(converterScoreParaLetra(score));
+                    return;
                 }
             }
-            
-         // Caso não encontre no Open Food Facts, define um valor padrão em vez de null
-            produto.setNutriscore("N/A");
-            
+
+            // Fallback seguro caso o produto não tenha classificação cadastrada
+            produto.setNutriscore("-");
+
         } catch (Exception e) {
-            // Exibe o erro no console em caso de falha de rede ou parsing
-            System.err.println("Erro ao buscar Nutri-Score na Open Food Facts: " + e.getMessage());
+            System.err.println("Erro na chamada Open Food Facts: " + e.getMessage());
+            // Fallback garantido para nunca violar o @Size(max = 2) nem salvar null
+            produto.setNutriscore("-");
         }
     }
 
