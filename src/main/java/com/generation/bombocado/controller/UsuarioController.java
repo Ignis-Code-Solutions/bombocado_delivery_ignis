@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.generation.bombocado.dto.PerfilAtualizacaoRequest;
 import com.generation.bombocado.model.Usuario;
 import com.generation.bombocado.model.UsuarioLogin;
 import com.generation.bombocado.service.UsuarioService;
@@ -67,4 +69,20 @@ public class UsuarioController {
 	public ResponseEntity<List<Usuario>> getByNome(@PathVariable String nome) {
 	    return ResponseEntity.ok(usuarioService.getByNome(nome));
 	}
+	
+	@GetMapping("/perfil")
+	public ResponseEntity<Usuario> getPerfil(Authentication authentication) {
+		return usuarioService.getByUsuarioLogado(authentication.getName())
+				.map(resposta -> ResponseEntity.ok(resposta))
+				.orElse(ResponseEntity.notFound().build());
+	}
+
+	@PutMapping("/perfil")
+	public ResponseEntity<Usuario> atualizarPerfil(@Valid @RequestBody PerfilAtualizacaoRequest perfil,
+			Authentication authentication) {
+		return usuarioService.atualizarPerfil(authentication.getName(), perfil)
+				.map(resposta -> ResponseEntity.ok(resposta))
+				.orElse(ResponseEntity.notFound().build());
+	}
+}
 }

@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.generation.bombocado.dto.PerfilAtualizacaoRequest;
 import com.generation.bombocado.model.Usuario;
 import com.generation.bombocado.model.UsuarioLogin;
 import com.generation.bombocado.repository.UsuarioRepository;
@@ -105,6 +106,33 @@ public class UsuarioService {
 }
 
 	private String gerarToken(String usuario) {
-	return "Bearer " + jwtService.generateToken(usuario);
+		return "Bearer " + jwtService.generateToken(usuario);
+	}
+
+	public Optional<Usuario> getByUsuarioLogado(String usuario) {
+		return usuarioRepository.findByUsuario(usuario)
+				.map(this::ocultarSenha);
+	}
+
+	public Optional<Usuario> atualizarPerfil(String usuarioLogado, PerfilAtualizacaoRequest dados) {
+
+		Optional<Usuario> usuarioExistente = usuarioRepository.findByUsuario(usuarioLogado);
+
+		if (usuarioExistente.isEmpty()) {
+			return Optional.empty();
+		}
+
+		Usuario usuario = usuarioExistente.get();
+		usuario.setNome(dados.getNome());
+		usuario.setTelefone(dados.getTelefone());
+		usuario.setEndereco(dados.getEndereco());
+		usuario.setImagem(dados.getImagem());
+
+		return Optional.of(ocultarSenha(usuarioRepository.save(usuario)));
+	}
+
+	private Usuario ocultarSenha(Usuario usuario) {
+		usuario.setSenha(null);
+		return usuario;
 	}
 }
