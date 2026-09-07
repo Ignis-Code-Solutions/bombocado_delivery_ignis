@@ -1,6 +1,7 @@
 package com.generation.bombocado.service;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,13 +11,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.JsonNode;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.generation.bombocado.model.Produto;
 import com.generation.bombocado.repository.CategoriaRepository;
 import com.generation.bombocado.repository.ProdutoRepository;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -102,7 +104,7 @@ public class ProdutoService {
     }
 
     private void definirNutriscore(Produto produto) {
-    	if (produto.getNome() == null || produto.getNome().trim().isEmpty()) {
+        if (produto.getNome() == null || produto.getNome().trim().isEmpty()) {
             produto.setNutriscore("-");
             return;
         }
@@ -110,52 +112,73 @@ public class ProdutoService {
         try {
             RestTemplate restTemplate = new RestTemplate();
 
-            // 1. Cabeçalhos com User-Agent e Autenticação Básica (credenciais do Render)
+            // 1. Cabeçalhos: User-Agent e Accept
             HttpHeaders headers = new HttpHeaders();
-            headers.set("User-Agent", "BombocadoApp - Web/Java - Version 1.0 - dev@bombocado.com");
-            
+            headers.set(HttpHeaders.USER_AGENT, "BombocadoApp/1.0 (contato@bombocado.com)");
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
             if (offUsername != null && !offUsername.isBlank() && offPassword != null && !offPassword.isBlank()) {
                 headers.setBasicAuth(offUsername, offPassword);
             }
 
-            HttpEntity<String> entity = new HttpEntity<>(headers);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-            // 2. Endpoint moderno v2 filtrando apenas o essencial
+            // 2. Endpoint moderno v2
             String url = UriComponentsBuilder.fromUriString("https://world.openfoodfacts.org/api/v2/search")
                     .queryParam("search_terms", produto.getNome())
-                    .queryParam("fields", "product_name,nutriscore_grade,nutriscore_score")
-                    .queryParam("page_size", "1")
+                    .queryParam("fields", "product_name,nutriscore_grade,nutrition_grades,nutriscore_score")
+                    .queryParam("page_size", 1)
                     .encode()
                     .toUriString();
 
-            // 3. Execução da chamada
-            ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
-            JsonNode root = response.getBody();
+            System.out.println("[OpenFoodFacts] Consultando URL: " + url);
 
-            if (root != null && root.has("products") && root.get("products").isArray() && root.get("products").size() > 0) {
-                JsonNode primeiroProduto = root.get("products").get(0);
+            // 3. Recebe a resposta como String.class (evita o erro com classe abstrata)
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
 
-                if (primeiroProduto.has("nutriscore_grade")) {
-                    String grade = primeiroProduto.get("nutriscore_grade").asText();
-                    if (grade != null && !grade.isBlank() && !grade.equalsIgnoreCase("unknown")) {
-                        produto.setNutriscore(grade.toUpperCase());
+            if (response.getBody() != null) {
+                // Converte a String para a árvore JsonNode usando ObjectMapper
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode root = mapper.readTree(response.getBody());
+
+                if (root.has("products") && root.get("products").isArray() && root.get("products").size() > 0) {
+                    JsonNode primeiroProduto = root.get("products").get(0);
+
+                    // Prioridade 1: nutriscore_grade
+                    if (primeiroProduto.hasNonNull("nutriscore_grade")) {
+                        String grade = primeiroProduto.get("nutriscore_grade").asText();
+                        if (!grade.isBlank() && !grade.equalsIgnoreCase("unknown")) {
+                            produto.setNutriscore(grade.toUpperCase());
+                            System.out.println("[OpenFoodFacts] Encontrado via nutriscore_grade: " + produto.getNutriscore());
+                            return;
+                        }
+                    }
+
+                    // Prioridade 2: nutrition_grades
+                    if (primeiroProduto.hasNonNull("nutrition_grades")) {
+                        String grade = primeiroProduto.get("nutrition_grades").asText();
+                        if (!grade.isBlank() && !grade.equalsIgnoreCase("unknown")) {
+                            produto.setNutriscore(grade.toUpperCase());
+                            System.out.println("[OpenFoodFacts] Encontrado via nutrition_grades: " + produto.getNutriscore());
+                            return;
+                        }
+                    }
+
+                    // Prioridade 3: cálculo via score numérico
+                    if (primeiroProduto.hasNonNull("nutriscore_score")) {
+                        int score = primeiroProduto.get("nutriscore_score").asInt();
+                        produto.setNutriscore(converterScoreParaLetra(score));
+                        System.out.println("[OpenFoodFacts] Calculado via score: " + produto.getNutriscore());
                         return;
                     }
                 }
-
-                if (primeiroProduto.has("nutriscore_score")) {
-                    int score = primeiroProduto.get("nutriscore_score").asInt();
-                    produto.setNutriscore(converterScoreParaLetra(score));
-                    return;
-                }
             }
 
-            // Fallback seguro caso o produto não tenha classificação cadastrada
+            System.out.println("[OpenFoodFacts] Nenhum produto com Nutri-Score encontrado para: " + produto.getNome());
             produto.setNutriscore("-");
 
         } catch (Exception e) {
-            System.err.println("Erro na chamada Open Food Facts: " + e.getMessage());
-            // Fallback garantido para nunca violar o @Size(max = 2) nem salvar null
+            System.err.println("[OpenFoodFacts] Erro na requisição: " + e.getMessage());
             produto.setNutriscore("-");
         }
     }
