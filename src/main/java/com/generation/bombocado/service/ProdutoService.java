@@ -62,7 +62,7 @@ public class ProdutoService {
         }
 
         validarCategoria(produto);
-        definirNutriscore(produto);
+        definirNutriscoreSeNecessario(produto);
 
         return produtoRepository.save(produto);
     }
@@ -74,7 +74,7 @@ public class ProdutoService {
 
         if (produtoRepository.existsById(produto.getId())) {
             validarCategoria(produto);
-            definirNutriscore(produto);
+            definirNutriscoreSeNecessario(produto);
             return Optional.of(produtoRepository.save(produto));
         }
 
@@ -101,6 +101,33 @@ public class ProdutoService {
                 throw new IllegalArgumentException("A Categoria informada não existe!");
             }
         }
+    }
+    
+    private boolean nutriscoreValido(String nutriscore) {
+
+        if (nutriscore == null) {
+            return false;
+        }
+
+        String valor = nutriscore.trim().toUpperCase();
+
+        return valor.matches("[A-E]");
+    }
+
+    private void definirNutriscoreSeNecessario(Produto produto) {
+
+        if (nutriscoreValido(produto.getNutriscore())) {
+
+            produto.setNutriscore(
+                    produto.getNutriscore()
+                            .trim()
+                            .toUpperCase()
+            );
+
+            return;
+        }
+
+        definirNutriscore(produto);
     }
 
     private void definirNutriscore(Produto produto) {
